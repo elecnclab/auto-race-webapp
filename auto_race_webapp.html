@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>AUTO RACE - Electronic & CNC Lab</title>
+  <style>
+    :root {
+      --body-gray: #a3a38d;
+      --body-dark: #777761;
+      --body-light: #c2c2aa;
+      --panel-black: #060606;
+      --led-red: #ff2b1f;
+      --led-dim: rgba(255, 43, 31, 0.13);
+      --led-glow: rgba(255, 43, 31, 0.75);
+      --player-green: #4dff78;
+      --player-green-dim: rgba(77, 255, 120, 0.22);
+      --player-green-glow: rgba(77, 255, 120, 0.85);
+      --text-dark: #222;
+      --label-red: #b00000;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      touch-action: manipulation;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at center, #353535 0%, #171717 65%, #070707 100%);
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text-dark);
+    }
+
+    .page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      padding: 20px;
+    }
+
+    .handheld {
+      width: 420px;
+      max-width: calc(100vw - 24px);
+      padding: 24px 24px 28px;
+      border-radius: 38px 38px 52px 52px;
+      background:
+        linear-gradient(145deg, var(--body-light), var(--body-gray) 45%, var(--body-dark));
+      box-shadow:
+        0 28px 60px rgba(0, 0, 0, 0.55),
+        inset 0 4px 9px rgba(255, 255, 255, 0.35),
+        inset 0 -8px 16px rgba(0, 0, 0, 0.35);
+      border: 3px solid #4d4d4d;
+      position: relative;
+    }
+
+    .brand-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 12px;
+      letter-spacing: 1px;
+    }
+
+    .title {
+      font-weight: 900;
+      font-size: 35px;
+      color: #121212;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+    }
+
+    .signature {
+      font-size: 12px;
+      font-weight: bold;
+      color: #333;
+      text-align: right;
+      line-height: 1.15;
+    }
+
+    .display-bezel {
+      padding: 16px;
+      background: linear-gradient(145deg, #333, #111);
+      border-radius: 18px;
+      border: 3px solid #1f1f1f;
+      box-shadow:
+        inset 0 0 22px rgba(0, 0, 0, 0.9),
+        0 3px 4px rgba(255, 255, 255, 0.25);
+    }
+
+    .display {
+      position: relative;
+      width: 100%;
+      height: 390px;
+      background:
+        radial-gradient(circle at 50% 42%, #151515 0%, var(--panel-black) 70%);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 2px solid #000;
+      box-shadow:
+        inset 0 0 26px #000,
+        inset 0 0 2px rgba(255, 43, 31, 0.5);
+    }
+
+    .top-display {
+      display: grid;
+      grid-template-columns: 1fr 1fr 0.75fr 0.9fr;
+      gap: 8px;
+      padding: 10px 10px 4px;
+      color: var(--led-red);
+      font-family: "Courier New", monospace;
+      text-shadow: 0 0 9px var(--led-glow);
+      font-weight: bold;
+    }
+
+    .readout {
+      border: 1px solid rgba(255, 43, 31, 0.22);
+      border-radius: 4px;
+      padding: 5px 4px;
+      min-height: 44px;
+      background: rgba(255, 0, 0, 0.035);
+    }
+
+    .readout .label {
+      display: block;
+      font-size: 9px;
+      opacity: 0.72;
+      letter-spacing: 1px;
+    }
+
+    .readout .value {
+      display: block;
+      font-size: 20px;
+      line-height: 21px;
+      letter-spacing: 1px;
+    }
+
+    .road-area {
+      position: absolute;
+      left: 50%;
+      top: 76px;
+      transform: translateX(-50%);
+      width: 190px;
+      height: 292px;
+      border-left: 2px solid rgba(255, 43, 31, 0.18);
+      border-right: 2px solid rgba(255, 43, 31, 0.18);
+    }
+
+    .lane-marker {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255, 43, 31, 0.28),
+        rgba(255, 43, 31, 0.28) 14px,
+        transparent 14px,
+        transparent 28px
+      );
+    }
+
+    .lane-marker.one { left: 33.333%; }
+    .lane-marker.two { left: 66.666%; }
+
+    .cell {
+      position: absolute;
+      width: 42px;
+      height: 22px;
+      border-radius: 4px;
+      border: 1px solid var(--led-dim);
+      background: rgba(255, 43, 31, 0.04);
+      box-shadow: inset 0 0 4px rgba(255, 43, 31, 0.08);
+    }
+
+    .car {
+      background: var(--led-red);
+      border-color: rgba(255, 110, 100, 0.9);
+      box-shadow:
+        0 0 7px var(--led-glow),
+        0 0 18px rgba(255, 43, 31, 0.45),
+        inset 0 0 5px rgba(255, 255, 255, 0.45);
+    }
+
+    .player {
+      height: 26px;
+      background: var(--player-green);
+      border-color: rgba(180, 255, 200, 0.95);
+      box-shadow:
+        0 0 10px var(--player-green-glow),
+        0 0 24px rgba(77, 255, 120, 0.55),
+        inset 0 0 6px rgba(255, 255, 255, 0.55);
+    }
+
+    .message {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 12px;
+      text-align: center;
+      font-family: "Courier New", monospace;
+      font-size: 20px;
+      font-weight: bold;
+      color: var(--led-red);
+      text-shadow: 0 0 12px var(--led-glow);
+      letter-spacing: 2px;
+      min-height: 26px;
+    }
+
+    .blink {
+      animation: blink 1s steps(2, start) infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0.25; }
+    }
+
+    .controls-panel {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .control-box {
+      padding: 14px;
+      border-radius: 16px;
+      background: linear-gradient(145deg, #8e8e8e, #5f5f5f);
+      box-shadow:
+        inset 0 2px 4px rgba(255,255,255,0.25),
+        inset 0 -4px 8px rgba(0,0,0,0.25);
+      border: 2px solid #565656;
+      min-height: 116px;
+    }
+
+    .control-title {
+      font-size: 12px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+      color: #202020;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .plastic-button {
+      width: 58px;
+      height: 42px;
+      border-radius: 12px;
+      border: 2px solid #2a2a2a;
+      background: linear-gradient(145deg, #dfdfdf, #7e7e7e);
+      box-shadow:
+        0 5px 0 #303030,
+        inset 0 3px 4px rgba(255,255,255,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #111;
+    }
+
+    .red-button {
+      background: linear-gradient(145deg, #ff3d34, #8a0800);
+      color: white;
+    }
+
+    .mode-row, .gear-row, .power-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .small-key {
+      flex: 1;
+      min-height: 35px;
+      border-radius: 8px;
+      border: 2px solid #333;
+      background: linear-gradient(145deg, #d4d4d4, #747474);
+      box-shadow: 0 4px 0 #333, inset 0 2px 3px rgba(255,255,255,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .small-key.active {
+      background: linear-gradient(145deg, #ff4b40, #920800);
+      color: white;
+    }
+
+    .instructions {
+      max-width: 420px;
+      color: #d8d8d8;
+      font-size: 14px;
+      line-height: 1.45;
+      text-align: center;
+    }
+
+    .instructions kbd {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #202020;
+      border: 1px solid #555;
+      color: white;
+      font-family: "Courier New", monospace;
+    }
+
+    .touch-controls {
+      width: 420px;
+      max-width: calc(100vw - 24px);
+      display: none;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .touch-row {
+      display: grid;
+      gap: 10px;
+    }
+
+    .touch-row.two {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .touch-row.four {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .touch-row.three {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .touch-button {
+      min-height: 58px;
+      border-radius: 16px;
+      border: 2px solid #2a2a2a;
+      background: linear-gradient(145deg, #eeeeee, #777);
+      box-shadow:
+        0 5px 0 #303030,
+        inset 0 3px 4px rgba(255,255,255,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 18px;
+      color: #111;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .touch-button:active {
+      transform: translateY(4px);
+      box-shadow:
+        0 1px 0 #303030,
+        inset 0 2px 6px rgba(0,0,0,0.35);
+    }
+
+    .touch-button.red {
+      background: linear-gradient(145deg, #ff463d, #8a0800);
+      color: white;
+    }
+
+    .touch-button.active {
+      background: linear-gradient(145deg, #ff4b40, #920800);
+      color: white;
+    }
+
+    .touch-caption {
+      color: #d8d8d8;
+      font-size: 13px;
+      text-align: center;
+      line-height: 1.35;
+    }
+
+    @media (pointer: coarse), (max-width: 720px) {
+      body {
+        align-items: stretch;
+        overflow: hidden;
+        background: #070707;
+      }
+
+      .page {
+        width: 100vw;
+        height: 100vh;
+        padding: 8px;
+        gap: 8px;
+        justify-content: space-between;
+      }
+
+      .handheld {
+        width: 100%;
+        max-width: none;
+        padding: 0;
+        border: none;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .brand-row,
+      .controls-panel,
+      .handheld > .control-box {
+        display: none;
+      }
+
+      .display-bezel {
+        padding: 6px;
+        border-radius: 12px;
+        border: 2px solid #1f1f1f;
+        flex: 1;
+        min-height: 0;
+        display: flex;
+      }
+
+      .display {
+        height: auto;
+        min-height: 0;
+        flex: 1;
+        border-radius: 8px;
+      }
+
+      .top-display {
+        grid-template-columns: 1fr 1fr 0.7fr 0.75fr;
+        gap: 5px;
+        padding: 8px 8px 2px;
+      }
+
+      .readout {
+        min-height: 38px;
+        padding: 4px 3px;
+      }
+
+      .readout .label {
+        font-size: 8px;
+      }
+
+      .readout .value {
+        font-size: 18px;
+        line-height: 19px;
+      }
+
+      .road-area {
+        top: 62px;
+        height: calc(100% - 98px);
+        transform: translateX(-50%) scale(1.08);
+        transform-origin: top center;
+      }
+
+      .message {
+        bottom: 6px;
+        font-size: 18px;
+      }
+
+      .instructions {
+        display: none;
+      }
+
+      .touch-controls {
+        display: grid;
+        width: 100%;
+        max-width: none;
+        flex: 0 0 auto;
+        gap: 10px;
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      .touch-caption {
+        display: none;
+      }
+
+      .touch-button {
+        min-height: 56px;
+        font-size: 17px;
+        border-radius: 14px;
+      }
+    }
+
+    @media (pointer: coarse) and (orientation: landscape), (max-width: 720px) and (orientation: landscape) {
+      .page {
+        display: grid;
+        grid-template-columns: 1fr 280px;
+        gap: 8px;
+      }
+
+      .touch-controls {
+        align-self: stretch;
+        align-content: center;
+      }
+
+      .touch-button {
+        min-height: 46px;
+        font-size: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="handheld" aria-label="AUTO RACE Electronic & CNC Lab">
+      <div class="brand-row">
+        <div class="title">AUTO RACE</div>
+        <div class="signature">Electronic<br />&amp; CNC Lab</div>
+      </div>
+
+      <div class="display-bezel">
+        <div class="display" id="display">
+          <div class="top-display">
+            <div class="readout">
+              <span class="label">SCORE</span>
+              <span class="value" id="score">000</span>
+            </div>
+            <div class="readout">
+              <span class="label">HI SCORE</span>
+              <span class="value" id="hiScore">000</span>
+            </div>
+            <div class="readout">
+              <span class="label">GEAR</span>
+              <span class="value" id="gear">1</span>
+            </div>
+            <div class="readout">
+              <span class="label">LIVES</span>
+              <span class="value" id="lives">5</span>
+            </div>
+          </div>
+
+          <div class="road-area" id="road">
+            <div class="lane-marker one"></div>
+            <div class="lane-marker two"></div>
+          </div>
+
+          <div class="message blink" id="message">PRESS START</div>
+        </div>
+      </div>
+
+      <div class="controls-panel">
+        <div class="control-box">
+          <div class="control-title">STEERING</div>
+          <div class="button-row">
+            <div class="plastic-button">◀</div>
+            <div class="plastic-button">▶</div>
+          </div>
+        </div>
+
+        <div class="control-box">
+          <div class="control-title">GAME MODE</div>
+          <div class="mode-row">
+            <div class="small-key active" id="modeA">A</div>
+            <div class="small-key" id="modeB">B</div>
+          </div>
+          <div class="control-title" style="margin-top:14px;">START</div>
+          <div class="button-row">
+            <div class="plastic-button red-button">SPACE</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-box" style="margin-top:16px;">
+        <div class="control-title">POWER</div>
+        <div class="power-row" style="margin-bottom:14px;">
+          <div class="small-key active" id="powerSwitch">ON</div>
+        </div>
+        <div class="control-title">4 SPEED GEAR SHIFT</div>
+        <div class="gear-row">
+          <div class="small-key active" data-gear="1">1</div>
+          <div class="small-key" data-gear="2">2</div>
+          <div class="small-key" data-gear="3">3</div>
+          <div class="small-key" data-gear="4">4</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="instructions">
+      <strong>Comandi PC:</strong>
+      <kbd>Spazio</kbd> start · <kbd>←</kbd>/<kbd>→</kbd> sterzo ·
+      <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> marce ·
+      <kbd>A</kbd>/<kbd>B</kbd> modalità
+    </div>
+
+    <div class="touch-controls" aria-label="Comandi touch">
+      <div class="touch-caption">Comandi touch per smartphone/tablet</div>
+
+      <div class="touch-row two">
+        <button class="touch-button" id="touchLeft" type="button">◀</button>
+        <button class="touch-button" id="touchRight" type="button">▶</button>
+      </div>
+
+      <div class="touch-row three">
+        <button class="touch-button red" id="touchStart" type="button">START</button>
+        <button class="touch-button" id="touchPower" type="button">POWER</button>
+        <button class="touch-button" id="touchMode" type="button">MODE A</button>
+      </div>
+
+      <div class="touch-row four">
+        <button class="touch-button active" data-touch-gear="1" type="button">1</button>
+        <button class="touch-button" data-touch-gear="2" type="button">2</button>
+        <button class="touch-button" data-touch-gear="3" type="button">3</button>
+        <button class="touch-button" data-touch-gear="4" type="button">4</button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    "use strict";
+
+    /*
+      AUTO RACE - versione webapp single-file
+      Ispirata ai vecchi scacciapensieri elettronici anni '80.
+      Grafica a posizioni fisse, display LED rosso, cambio a 4 marce,
+      modalità A/B, suoni sintetizzati tramite Web Audio API.
+    */
+
+    const road = document.getElementById("road");
+    const scoreEl = document.getElementById("score");
+    const hiScoreEl = document.getElementById("hiScore");
+    const gearEl = document.getElementById("gear");
+    const livesEl = document.getElementById("lives");
+    const messageEl = document.getElementById("message");
+    const gearKeys = [...document.querySelectorAll("[data-gear]")];
+    const modeAEl = document.getElementById("modeA");
+    const modeBEl = document.getElementById("modeB");
+    const touchGearKeys = [...document.querySelectorAll("[data-touch-gear]")];
+    const touchModeEl = document.getElementById("touchMode");
+    const touchPowerEl = document.getElementById("touchPower");
+
+    const COLS = 3;
+    const ROWS = 9;
+    const CELL_W = 42;
+    const CELL_H = 22;
+    const ROAD_W = 190;
+    const ROAD_H = 292;
+    const X_POS = [17, 74, 131];
+    const Y_POS = [8, 39, 70, 101, 132, 163, 194, 225, 256];
+    const PLAYER_START_ROW = ROWS - 1;
+    const PLAYER_TOP_ROW = 0;
+
+    const gearSpeeds = {
+      1: 540,
+      2: 420,
+      3: 320,
+      4: 245
+    };
+
+    let audioCtx = null;
+    let gameState = "idle"; // idle | running | crashed
+    let mode = "A";
+    let gear = 1;
+    let playerCol = 1;
+    let playerRow = PLAYER_START_ROW;
+    let climbTimer = null;
+    let level = 0;
+    let obstacles = [];
+    let score = 0;
+    let lives = 5;
+    const MAX_LIVES = 5;
+    let hiScore = Number(localStorage.getItem("autoRaceHiScore") || 0);
+    let tickTimer = null;
+    let beepTimer = null;
+    let spawnCounter = 0;
+    let idleBlinkState = false;
+    let idleTimer = null;
+    let powerOn = true;
+    let engineHumOsc = null;
+    let engineHumGain = null;
+
+    hiScoreEl.textContent = formatScore(hiScore);
+    renderStaticGrid();
+    render();
+    startIdleBlink();
+
+    function formatScore(value) {
+      return String(value).padStart(3, "0").slice(-3);
+    }
+
+    function ensureAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === "suspended") audioCtx.resume();
+    }
+
+    function tone(freq, durationMs, volume = 0.045, type = "square") {
+      if (!audioCtx) return;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const now = audioCtx.currentTime;
+
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, now);
+      gain.gain.setValueAtTime(volume, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + durationMs / 1000);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + durationMs / 1000);
+    }
+
+    function startEngineHum() {
+      stopEngineHum();
+
+      if (!audioCtx || !powerOn) return;
+
+      const humFreq = {
+        1: 50,
+        2: 60,
+        3: 70,
+        4: 80
+      };
+
+      engineHumOsc = audioCtx.createOscillator();
+      engineHumGain = audioCtx.createGain();
+
+      engineHumOsc.type = "sawtooth";
+      engineHumOsc.frequency.setValueAtTime(humFreq[gear], audioCtx.currentTime);
+      engineHumGain.gain.setValueAtTime(gameState === "running" ? 0.028 : 0.0, audioCtx.currentTime);
+
+      engineHumOsc.connect(engineHumGain);
+      engineHumGain.connect(audioCtx.destination);
+      engineHumOsc.start();
+    }
+
+    function stopEngineHum() {
+      if (engineHumOsc) {
+        engineHumOsc.stop();
+        engineHumOsc.disconnect();
+        engineHumOsc = null;
+      }
+
+      if (engineHumGain) {
+        engineHumGain.disconnect();
+        engineHumGain = null;
+      }
+    }
+
+    function startBeepLoop() {
+      clearInterval(beepTimer);
+
+      const intervalByGear = { 1: 720, 2: 560, 3: 410, 4: 310 };
+
+      beepTimer = setInterval(() => {
+        if (gameState === "running") {
+          tone(gear === 4 ? 520 : 430 + (gear * 12), 22, 0.012, "square");
+        }
+      }, intervalByGear[gear]);
+    }
+
+    function playStartSound() {
+      tone(340, 80, 0.045);
+      setTimeout(() => tone(470, 90, 0.045), 100);
+    }
+
+    function playGearSound() {
+      const base = 260 + gear * 90;
+      tone(base, 70, 0.04);
+    }
+
+    function playCrashSound() {
+      tone(95, 170, 0.08, "sawtooth");
+      setTimeout(() => tone(70, 230, 0.075, "sawtooth"), 135);
+    }
+
+    function playScoreSound() {
+      tone(590, 32, 0.026, "square");
+    }
+
+    function renderStaticGrid() {
+      // Celle debolmente visibili: simulano segmenti/spie non accesi.
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.style.left = `${X_POS[c]}px`;
+          cell.style.top = `${Y_POS[r]}px`;
+          road.appendChild(cell);
+        }
+      }
+    }
+
+    function render() {
+      document.querySelectorAll(".dynamic-car").forEach(el => el.remove());
+
+      obstacles.forEach(ob => {
+        if (ob.row >= 0 && ob.row < ROWS) {
+          addCar(ob.col, ob.row, false);
+        }
+      });
+
+      if (gameState !== "idle" || idleBlinkState) {
+        addCar(playerCol, playerRow, true);
+      }
+
+      scoreEl.textContent = formatScore(score);
+      hiScoreEl.textContent = formatScore(hiScore);
+      gearEl.textContent = String(gear);
+      livesEl.textContent = String(lives);
+
+      gearKeys.forEach(key => {
+        key.classList.toggle("active", Number(key.dataset.gear) === gear);
+      });
+      touchGearKeys.forEach(key => {
+        key.classList.toggle("active", Number(key.dataset.touchGear) === gear);
+      });
+      modeAEl.classList.toggle("active", mode === "A");
+      modeBEl.classList.toggle("active", mode === "B");
+      if (touchModeEl) touchModeEl.textContent = `MODE ${mode}`;
+      if (touchPowerEl) touchPowerEl.textContent = powerOn ? "POWER ON" : "POWER OFF";
+      if (touchPowerEl) touchPowerEl.classList.toggle("active", powerOn);
+    }
+
+    function addCar(col, row, isPlayer) {
+      const car = document.createElement("div");
+      car.className = `cell car dynamic-car ${isPlayer ? "player" : ""}`;
+      car.style.left = `${X_POS[col]}px`;
+      car.style.top = `${Y_POS[row] - (isPlayer ? 2 : 0)}px`;
+      road.appendChild(car);
+    }
+
+    function startIdleBlink() {
+      clearInterval(idleTimer);
+      idleTimer = setInterval(() => {
+        if (gameState === "idle") {
+          idleBlinkState = !idleBlinkState;
+          render();
+        }
+      }, 700);
+    }
+
+    function startGame() {
+      if (!powerOn) return;
+
+      ensureAudio();
+      playStartSound();
+      clearInterval(idleTimer);
+      gameState = "running";
+      score = 0;
+      lives = MAX_LIVES;
+      level = 0;
+      playerCol = 1;
+      playerRow = PLAYER_START_ROW;
+      obstacles = [];
+      spawnCounter = 0;
+      messageEl.textContent = "";
+      messageEl.classList.remove("blink");
+      scheduleTick();
+      startClimbTimer();
+      startEngineHum();
+      startBeepLoop();
+      render();
+    }
+
+    function scheduleTick() {
+      clearInterval(tickTimer);
+      const levelSpeedBonus = Math.min(level * 16, 90);
+      tickTimer = setInterval(tick, Math.max(145, gearSpeeds[gear] - levelSpeedBonus));
+    }
+
+    function tick() {
+      if (gameState !== "running") return;
+
+      // Avanzamento a posizioni fisse: ogni ostacolo scende di una cella.
+      obstacles.forEach(ob => ob.row++);
+
+      // Se un'auto avversaria supera il giocatore senza collisione, aumenta il punteggio.
+      const passed = obstacles.filter(ob => ob.row > PLAYER_START_ROW).length;
+      if (passed > 0) {
+        score += passed;
+        playScoreSound();
+        updateHiScore();
+      }
+      obstacles = obstacles.filter(ob => ob.row <= PLAYER_START_ROW);
+
+      // Collisione.
+      if (obstacles.some(ob => ob.row === playerRow && ob.col === playerCol)) {
+        crash();
+        return;
+      }
+
+      spawnCounter++;
+      const spawnEvery = Math.max(1, (mode === "A" ? 2 : 2) - Math.floor(level / 5));
+      const chance = Math.min(mode === "A" ? 0.72 + level * 0.025 : 0.86 + level * 0.018, mode === "A" ? 0.92 : 0.96);
+
+      if (spawnCounter >= spawnEvery) {
+        spawnCounter = 0;
+        if (Math.random() < chance) spawnObstacle();
+      }
+
+      render();
+    }
+
+    function spawnObstacle() {
+      const occupiedTop = new Set(obstacles.filter(ob => ob.row === 0).map(ob => ob.col));
+      const available = [0, 1, 2].filter(col => !occupiedTop.has(col));
+      if (!available.length) return;
+
+      // Modalità B più difficile, ma non deve generare muri inevitabili.
+      // Evita di mettere troppe auto consecutive sulla corsia del giocatore.
+      const recentDanger = obstacles.some(ob => ob.col === playerCol && ob.row <= 2);
+      let col;
+
+      if (mode === "B" && !recentDanger && Math.random() < Math.min(0.34 + level * 0.02, 0.48) && available.includes(playerCol)) {
+        col = playerCol;
+      } else {
+        const saferAvailable = available.filter(c => !(mode === "B" && recentDanger && c === playerCol));
+        const pool = saferAvailable.length ? saferAvailable : available;
+        col = pool[Math.floor(Math.random() * pool.length)];
+      }
+
+      obstacles.push({ col, row: 0 });
+    }
+
+    function crash() {
+      gameState = "crashed";
+      lives = Math.max(0, lives - 1);
+      clearInterval(tickTimer);
+      clearInterval(climbTimer);
+      clearInterval(beepTimer);
+      stopEngineHum();
+      playCrashSound();
+      messageEl.textContent = lives > 0 ? "CRASH" : "GAME OVER";
+      messageEl.classList.add("blink");
+      render();
+
+      // Dopo l'incidente perde una vita. Finite le 5 vite torna alla schermata iniziale.
+      setTimeout(() => {
+        obstacles = [];
+        playerCol = 1;
+        playerRow = PLAYER_START_ROW;
+
+        if (lives <= 0) {
+          gameState = "idle";
+          messageEl.textContent = "PRESS START";
+          messageEl.classList.add("blink");
+          startIdleBlink();
+          render();
+          return;
+        }
+
+        messageEl.textContent = "";
+        messageEl.classList.remove("blink");
+        gameState = "running";
+        scheduleTick();
+        startClimbTimer();
+        startEngineHum();
+        startBeepLoop();
+        render();
+      }, 1200);
+    }
+
+    function startClimbTimer() {
+      clearInterval(climbTimer);
+
+      climbTimer = setInterval(() => {
+        if (gameState !== "running") return;
+
+        playerRow--;
+
+        if (playerRow <= PLAYER_TOP_ROW) {
+          score += 10;
+          level++;
+          updateHiScore();
+          playLevelSound();
+          playerRow = PLAYER_START_ROW;
+          obstacles = [];
+          spawnCounter = 0;
+          scheduleTick();
+          startBeepLoop();
+        }
+
+        if (obstacles.some(ob => ob.row === playerRow && ob.col === playerCol)) {
+          crash();
+          return;
+        }
+
+        render();
+      }, 4000);
+    }
+
+    function playLevelSound() {
+      tone(640, 70, 0.04, "square");
+      setTimeout(() => tone(760, 85, 0.04, "square"), 90);
+    }
+
+    function updateHiScore() {
+      if (score > hiScore) {
+        hiScore = score;
+        localStorage.setItem("autoRaceHiScore", String(hiScore));
+      }
+    }
+
+    function setGear(newGear) {
+      if (newGear < 1 || newGear > 4) return;
+      if (gear === newGear) return;
+      gear = newGear;
+      ensureAudio();
+      playGearSound();
+      if (gameState === "running") {
+        scheduleTick();
+        startEngineHum();
+        startBeepLoop();
+      }
+      render();
+    }
+
+    function setMode(newMode) {
+      if (gameState === "running" || gameState === "crashed") return;
+      mode = newMode;
+      ensureAudio();
+      tone(newMode === "A" ? 310 : 420, 65, 0.04);
+      render();
+    }
+
+    function steer(delta) {
+      if (gameState !== "running") return;
+      const next = Math.max(0, Math.min(COLS - 1, playerCol + delta));
+      if (next !== playerCol) {
+        playerCol = next;
+        tone(520, 24, 0.02);
+        if (obstacles.some(ob => ob.row === playerRow && ob.col === playerCol)) {
+          crash();
+          return;
+        }
+        render();
+      }
+    }
+
+    document.addEventListener("keydown", event => {
+      const key = event.key.toLowerCase();
+
+      if ([" ", "arrowleft", "arrowright", "1", "2", "3", "4", "a", "b"].includes(key)) {
+        event.preventDefault();
+      }
+
+      if (key === " ") {
+        if (gameState === "idle") startGame();
+        return;
+      }
+
+      if (key === "arrowleft") steer(-1);
+      if (key === "arrowright") steer(1);
+      if (["1", "2", "3", "4"].includes(key)) setGear(Number(key));
+      if (key === "a") setMode("A");
+      if (key === "b") setMode("B");
+    });
+
+    // Clic sui pulsanti disegnati: utili anche se il target principale resta PC/tastiera.
+    document.querySelectorAll(".plastic-button, .small-key").forEach(el => {
+      el.addEventListener("mousedown", () => ensureAudio());
+    });
+
+    modeAEl.addEventListener("click", () => setMode("A"));
+    modeBEl.addEventListener("click", () => setMode("B"));
+    gearKeys.forEach(key => key.addEventListener("click", () => setGear(Number(key.dataset.gear))));
+
+    function bindPress(element, handler) {
+      if (!element) return;
+      element.addEventListener("pointerdown", event => {
+        event.preventDefault();
+        ensureAudio();
+        handler();
+      });
+    }
+
+    bindPress(document.getElementById("touchLeft"), () => steer(-1));
+    bindPress(document.getElementById("touchRight"), () => steer(1));
+    bindPress(document.getElementById("touchStart"), () => {
+      if (gameState === "idle") startGame();
+    });
+    bindPress(document.getElementById("touchMode"), () => {
+      setMode(mode === "A" ? "B" : "A");
+    });
+    touchGearKeys.forEach(key => {
+      bindPress(key, () => setGear(Number(key.dataset.touchGear)));
+    });
+
+    const powerSwitch = document.getElementById("powerSwitch");
+
+    function setPower(state) {
+      powerOn = state;
+
+      if (!powerOn) {
+        clearInterval(tickTimer);
+        clearInterval(climbTimer);
+        clearInterval(beepTimer);
+        clearInterval(idleTimer);
+        stopEngineHum();
+
+        gameState = "off";
+        obstacles = [];
+        score = 0;
+        lives = MAX_LIVES;
+        level = 0;
+        playerRow = PLAYER_START_ROW;
+
+        messageEl.textContent = "";
+        messageEl.classList.remove("blink");
+        render();
+
+        document.querySelectorAll(".dynamic-car").forEach(el => el.remove());
+
+        powerSwitch.textContent = "OFF";
+        powerSwitch.classList.remove("active");
+        return;
+      }
+
+      ensureAudio();
+      tone(120, 80, 0.04, "sawtooth");
+
+      powerSwitch.textContent = "ON";
+      powerSwitch.classList.add("active");
+
+      gameState = "idle";
+      messageEl.textContent = "PRESS START";
+      messageEl.classList.add("blink");
+      startIdleBlink();
+      render();
+    }
+
+    powerSwitch.addEventListener("click", () => {
+      setPower(!powerOn);
+    });
+
+    bindPress(document.getElementById("touchPower"), () => {
+      setPower(!powerOn);
+    });
+  </script>
+</body>
+</html>
