@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.2] - 2026-05-10
+- Updated screenshots set in `screenshots/` (added new assets and removed `Screenshot-0.png`).
+- Updated `README.md` with a dedicated screenshots section.
+
 ## [1.0.1] - 2026-05-09
 - Added `VERSION` file for explicit version tracking.
 - Added and initialized `CHANGELOG.md`.

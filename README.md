@@ -43,3 +43,9 @@ Recreate the feeling of classic 1980s handheld electronic games directly in a br
 
 ## License
 MIT License
+
+## Screenshots
+![Game Screen 1](screenshots/auto-race-1.png)
+![Game Screen 2](screenshots/auto-race-2.png)
+![Box Front](screenshots/Scatola.png)
+![Box Back](screenshots/Scatola-back.png)
