@@ -909,21 +909,60 @@
     }
 
     function enforceFairPassage() {
-      // Evita configurazioni senza via d'uscita quando il giocatore è in corsia centrale:
-      // se alla riga immediatamente sopra ci sono auto sia a sinistra che a destra,
-      // ne rimuove una per garantire almeno un passaggio.
-      if (playerCol !== 1) return;
+      // Garantisce sempre almeno un percorso praticabile nelle prossime righe
+      // davanti al giocatore, anche quando si trova nelle corsie laterali.
+      const lookAhead = 2;
+      const maxFixPasses = 6;
+      let fixPass = 0;
 
-      const targetRow = playerRow - 1;
-      if (targetRow < 0) return;
+      while (!hasReachablePath(lookAhead) && fixPass < maxFixPasses) {
+        const rowsAhead = [playerRow - 1, playerRow - 2].filter(r => r >= 0);
+        let removed = false;
 
-      const leftIndex = obstacles.findIndex(ob => ob.row === targetRow && ob.col === 0);
-      const rightIndex = obstacles.findIndex(ob => ob.row === targetRow && ob.col === 2);
+        // Rimuove prima ostacoli più vicini al giocatore: sono quelli che creano
+        // i blocchi inevitabili percepiti come "nessuna via di uscita".
+        for (const row of rowsAhead) {
+          const idx = obstacles.findIndex(ob => ob.row === row);
+          if (idx !== -1) {
+            obstacles.splice(idx, 1);
+            removed = true;
+            break;
+          }
+        }
 
-      if (leftIndex !== -1 && rightIndex !== -1) {
-        const removeIndex = Math.random() < 0.5 ? leftIndex : rightIndex;
-        obstacles.splice(removeIndex, 1);
+        if (!removed) break;
+        fixPass++;
       }
+    }
+
+    function hasReachablePath(depth) {
+      let reachable = new Set([playerCol]);
+
+      for (let step = 1; step <= depth; step++) {
+        const row = playerRow - step;
+        if (row < 0) break;
+
+        const blocked = new Set(
+          obstacles
+            .filter(ob => ob.row === row)
+            .map(ob => ob.col)
+        );
+
+        const nextReachable = new Set();
+        for (const col of reachable) {
+          for (const delta of [-1, 0, 1]) {
+            const nextCol = col + delta;
+            if (nextCol < 0 || nextCol > COLS - 1) continue;
+            if (blocked.has(nextCol)) continue;
+            nextReachable.add(nextCol);
+          }
+        }
+
+        if (!nextReachable.size) return false;
+        reachable = nextReachable;
+      }
+
+      return true;
     }
 
     function spawnObstacle() {
