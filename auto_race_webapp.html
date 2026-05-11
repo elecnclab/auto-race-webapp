@@ -904,7 +904,26 @@
         if (Math.random() < chance) spawnObstacle();
       }
 
+      enforceFairPassage();
       render();
+    }
+
+    function enforceFairPassage() {
+      // Evita configurazioni senza via d'uscita quando il giocatore è in corsia centrale:
+      // se alla riga immediatamente sopra ci sono auto sia a sinistra che a destra,
+      // ne rimuove una per garantire almeno un passaggio.
+      if (playerCol !== 1) return;
+
+      const targetRow = playerRow - 1;
+      if (targetRow < 0) return;
+
+      const leftIndex = obstacles.findIndex(ob => ob.row === targetRow && ob.col === 0);
+      const rightIndex = obstacles.findIndex(ob => ob.row === targetRow && ob.col === 2);
+
+      if (leftIndex !== -1 && rightIndex !== -1) {
+        const removeIndex = Math.random() < 0.5 ? leftIndex : rightIndex;
+        obstacles.splice(removeIndex, 1);
+      }
     }
 
     function spawnObstacle() {
@@ -991,6 +1010,7 @@
           return;
         }
 
+        enforceFairPassage();
         render();
       }, 4000);
     }
