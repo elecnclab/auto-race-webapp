@@ -45,7 +45,15 @@ Recreate the feeling of classic 1980s handheld electronic games directly in a br
 MIT License
 
 ## Screenshots
-![Game Screen 1](screenshots/auto-race-1.png)
-![Game Screen 2](screenshots/auto-race-2.png)
-![Box Front](screenshots/Scatola.png)
-![Box Back](screenshots/Scatola-back.png)
+![Miniatura 1](screenshots/Miniatura.png)
+![Miniatura 2](screenshots/Miniatura-2.png)
+![Game Screen 1](screenshots/Screenshot-1.png)
+![Game Screen 2](screenshots/Screenshot-2.png)
+
+## References
+- `references/version-1/` (first version reference photos)
+- `references/version-2/` (second version reference photos)
+
+## Photo Credits
+Reference photos provided by Giuseppe Romano (`romans3`):
+- GitHub: https://github.com/romans3

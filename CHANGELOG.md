@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.5] - 2026-05-16
+- Added `references/version-1/` and `references/version-2/` to separate first and second Auto Race reference photo sets.
+- Moved historical/reference images out of `screenshots/` while keeping gameplay screenshots in `screenshots/`.
+- Added photo attribution for the newly added references to Giuseppe Romano (`romans3`) in `README.md` and `references/CREDITS.md`.
+- Updated README screenshot links to match the current file layout.
+
 ## [1.0.4] - 2026-05-12
 - Improved anti-block logic to prevent no-escape scenarios in all lanes (left, center, right).
 - Added a forward path reachability check on upcoming rows to ensure at least one valid passage.
